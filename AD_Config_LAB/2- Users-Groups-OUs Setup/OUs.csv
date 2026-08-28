@@ -1,0 +1,5 @@
+﻿name,path
+IT,"DC=miacsdomain,DC=com"
+IT Admins,"OU=IT,DC=miacsdomain,DC=com"
+IT Computers,"OU=IT,DC=miacsdomain,DC=com"
+Service accounts,"OU=IT,DC=miacsdomain,DC=com"
