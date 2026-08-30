@@ -232,21 +232,3 @@ def generate_test_dataset_raw(base_path="Preprocesamiento_Logs/logs"):
     data = _load_split(os.path.join(base_path, "test"), stats)
     _report(stats, "test")
     return data
-
-# =========================================================
-# DEDUPLICACIÓN
-# =========================================================
-
-def deduplicate_logs(sequence: list) -> list:
-    """BUGFIX: tuple(sorted(log.items())) falla con valores dict/list."""
-    seen, out = set(), []
-    for log in sequence:
-        key = json.dumps(log, sort_keys=True, default=str)
-        if key not in seen:
-            seen.add(key)
-            out.append(log)
-    return out
-
-
-def deduplicate_dataset(dataset: list) -> list:
-    return [(deduplicate_logs(seq), label) for seq, label in dataset]

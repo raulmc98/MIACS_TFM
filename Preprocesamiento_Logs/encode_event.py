@@ -18,7 +18,7 @@ from Preprocesamiento_Logs.fields_map import event_fields_map
 # ─────────────────────────────────────────
 
 HASH_BUCKETS = 512
-MAX_SEQ_LEN  = 900       
+MAX_SEQ_LEN  = 1200       
 
 PAD_ID     = 0            # timestep de relleno
 MISSING_ID = 1            # campo categórico ausente

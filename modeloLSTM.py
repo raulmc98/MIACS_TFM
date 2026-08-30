@@ -31,6 +31,8 @@ from Preprocesamiento_Logs.explain import explain_sequence
 
 from collections import Counter
 
+from tensorflow.keras import regularizers
+
 # =========================================================
 # ATENCIÓN CON MÁSCARA
 # =========================================================
@@ -96,8 +98,8 @@ def build_model(seq_len,
                 n_num_features=NUM_SIZE,
                 event_code_dim=16,
                 cat_dim=8,
-                lstm_units=64,
-                dropout=0.3):
+                lstm_units=32,
+                dropout=0.5):
 
     cat_input = Input(shape=(seq_len, n_cat_fields), dtype="int32", name="cat_input")
     num_input = Input(shape=(seq_len, n_num_features), dtype="float32", name="num_input")
@@ -134,7 +136,8 @@ def build_model(seq_len,
     context, attention_weights = AttentionLayer(name="attention")(lstm_out)
     context = Dropout(dropout)(context)
 
-    output = Dense(1, activation="sigmoid", name="output")(context)
+    output = Dense(1, activation="sigmoid", name="output",
+               kernel_regularizer=regularizers.l2(1e-3))(context)
 
     model = Model(inputs=[cat_input, num_input], outputs=output)
     attention_model = Model(inputs=[cat_input, num_input], outputs=attention_weights)
@@ -167,16 +170,13 @@ if __name__ == "__main__":
     train_raw, val_raw = train_test_split(
         train_raw, test_size=0.2, stratify=labels, random_state=42
     )
-    train_raw = augment_dataset_raw(train_raw, n_variants=5)   # solo train
+    train_raw = augment_dataset_raw(train_raw, n_variants=2)   # solo train
     test_raw  = generate_test_dataset_raw()
 
     for name, ds in (("train", train_raw), ("test", test_raw)):
         labels = [l for _, l in ds]
         print(f"{name}: {len(ds)} secuencias (benignas={labels.count(0)}, maliciosas={labels.count(1)})")
 
-
-    # 2. Aumentar SOLO el train
-    train_raw = augment_dataset_raw(train_raw, n_variants=5)
 
     # 3. Normalizar (recalcula engineer_features sobre los datos aumentados)
     train = normalize_dataset(train_raw)
@@ -193,9 +193,12 @@ if __name__ == "__main__":
     print(f"X_cat {Xc_tr.shape}  X_num {Xn_tr.shape}  y {y_tr.shape}")
 
     # 6. Entrenar
-    model, attention_model = build_model(seq_len=Xc_tr.shape[1])
+    model, attention_model = build_model(seq_len=Xc_tr.shape[1],
+        lstm_units=32,
+        dropout=0.5,
+    )
     model.compile(
-        optimizer="adam",
+        optimizer=tf.keras.optimizers.Adam(learning_rate=5e-4),
         loss="binary_crossentropy",
         metrics=[
             "accuracy",
@@ -206,7 +209,7 @@ if __name__ == "__main__":
     )
 
     early_stop = EarlyStopping(
-        monitor="val_auc", mode="max", patience=20, restore_best_weights=True
+        monitor="val_auc", mode="max", patience=15, restore_best_weights=True
     )
 
     classes = np.unique(y_tr)
@@ -218,7 +221,7 @@ if __name__ == "__main__":
     model.fit(
         [Xc_tr, Xn_tr], y_tr,
         validation_data=([Xc_va, Xn_va], y_va),
-        epochs=300,
+        epochs=60,
         batch_size=8,
         callbacks=[early_stop],
         verbose=1,
