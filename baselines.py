@@ -23,6 +23,10 @@ Produce dos tablas:
 Ambas evaluaciones usan validación cruzada estratificada sobre las
 CAPTURAS ORIGINALES, para ser comparables con cross_validate.py.
 
+No requiere TensorFlow.
+
+Uso:
+    python -m baselines
 """
 
 import os

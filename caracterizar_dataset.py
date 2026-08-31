@@ -16,6 +16,8 @@ Salidas:
   analisis/longitudes.csv
   analisis/features.csv
 
+Uso:
+    python -m Preprocesamiento_Logs.caracterizar_dataset
 """
 
 import os

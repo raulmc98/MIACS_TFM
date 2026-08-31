@@ -25,6 +25,9 @@ Salidas:
   analisis/explicabilidad.txt      informe completo
   analisis/atencion_resumen.csv    métricas por sesión
   analisis/cronologia_<n>.txt      cronologías individuales
+
+Uso:
+    python -m Preprocesamiento_Logs.explicabilidad
 """
 
 import os
