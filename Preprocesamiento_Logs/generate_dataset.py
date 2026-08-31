@@ -226,9 +226,3 @@ def generate_train_dataset_raw(base_path="Preprocesamiento_Logs/logs"):
     _report(stats, "train")
     return data
 
-
-def generate_test_dataset_raw(base_path="Preprocesamiento_Logs/logs"):
-    stats = {}
-    data = _load_split(os.path.join(base_path, "test"), stats)
-    _report(stats, "test")
-    return data
