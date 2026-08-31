@@ -1,0 +1,15 @@
+feature,pct_logs_benigna,pct_logs_maliciosa,capturas_benigna,capturas_maliciosa,observacion
+is_system_account,19.839,23.117,10,18,
+process_outside_system32,19.293,25.435,9,18,
+process_in_user_space,5.622,10.589,6,17,
+registry_is_persistence_key,0.496,0.288,7,12,
+registry_is_hku,6.989,10.647,9,18,
+file_in_sensitive_path,2.495,2.642,9,18,
+file_is_dump_or_archive,0.0,0.161,0,4,
+auth_is_ntlm,0.051,0.069,3,2,
+logon_is_remote,10.082,10.809,10,17,
+src_is_local,3.554,3.599,10,18,
+access_lsass,0.0,0.0,0,0,NUNCA SE ACTIVA
+is_lsass_dump_lolbin,0.0,0.012,0,1,
+parent_is_powershell,0.068,1.084,2,16,
+ps_cmd_is_lsass,0.0,0.035,0,1,

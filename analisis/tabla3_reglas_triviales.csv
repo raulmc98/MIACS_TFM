@@ -1,0 +1,8 @@
+regla,accuracy,precision,recall,f1
+Mayoritaria (predecir siempre la clase más frecuente),0.6429,0.3214,0.5,0.3913
+Contiene event_code 8 -> benigna (cobertura 30%),0.75,0.86,0.65,0.6494
+Contiene event_code 2 -> benigna (cobertura 10%),0.6786,0.8333,0.55,0.4909
+Contiene event_code 4723 -> benigna (cobertura 10%),0.6786,0.8333,0.55,0.4909
+Longitud >= 310 logs -> maliciosa (mejor umbral),0.7143,0.8462,0.6,0.5758
+Densidad >= 1.00 logs/s -> maliciosa (mejor umbral),0.7143,0.8462,0.6,0.5758
+Contiene user exclusivo de maliciosa (12 valor/es) -> maliciosa,0.5714,0.7273,0.6667,0.5625

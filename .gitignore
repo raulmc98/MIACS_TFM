@@ -14,9 +14,6 @@ __pycache__/
 *.pkl
 checkpoints/
 
-# Salidas del análisis
-analisis/
-
 # IDE
 .vscode/
 .idea/

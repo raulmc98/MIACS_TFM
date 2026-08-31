@@ -1,0 +1,85 @@
+LÍNEAS BASE — sección 6.4 de la memoria
+Todas las cifras se calculan sobre las capturas ORIGINALES,
+sin aumentación, con métricas macro para no favorecer a la
+clase mayoritaria.
+
+Capturas: 28 (benignas=10, maliciosas=18)
+
+==============================================================================
+TABLA 3 — REGLAS TRIVIALES DE REFERENCIA
+==============================================================================
+
+Reglas deterministas que no requieren modelado. Se evalúan sobre
+el conjunto completo: cualquier rendimiento alto aquí implica que
+las clases son separables sin aprender el patrón secuencial.
+
+regla                                                             acc   prec    rec     F1
+------------------------------------------------------------------------------
+Mayoritaria (predecir siempre la clase más frecuente)           0.643  0.321  0.500  0.391
+Contiene event_code 8 -> benigna (cobertura 30%)                0.750  0.860  0.650  0.649
+Contiene event_code 2 -> benigna (cobertura 10%)                0.679  0.833  0.550  0.491
+Contiene event_code 4723 -> benigna (cobertura 10%)             0.679  0.833  0.550  0.491
+Longitud >= 310 logs -> maliciosa (mejor umbral)                0.714  0.846  0.600  0.576
+Densidad >= 1.00 logs/s -> maliciosa (mejor umbral)             0.714  0.846  0.600  0.576
+Contiene user exclusivo de maliciosa (12 valor/es) -> mal...    0.571  0.727  0.667  0.562
+
+[!] Mejor regla trivial: F1 = 0.649
+    Contiene event_code 8 -> benigna (cobertura 30%)
+
+    Si el LSTM no supera claramente esta cifra, su capacidad
+    discriminante sobre este conjunto no es atribuible al
+    modelado secuencial.
+
+==============================================================================
+TABLA 4 — LÍNEA BASE NO SECUENCIAL (regresión logística)
+==============================================================================
+
+Características agregadas por sesión: frecuencias de event_code,
+medias de los indicadores derivados, longitud, duración y densidad.
+Esta representación DESCARTA el orden temporal por completo.
+
+Matriz: 28 sesiones x 56 características
+  39 frecuencias de event_code
+  14 indicadores derivados
+  3 características de volumen/tiempo
+
+modelo                       acc    prec     rec      F1     AUC
+------------------------------------------------------------------------------
+Mayoritaria                0.643   0.321   0.500   0.391   0.500
+                         F1 por fold: 0.390 ± 0.012  (0.40, 0.40, 0.40, 0.38, 0.38)
+Regresión logística        0.750   0.728   0.717   0.721   0.850
+                         F1 por fold: 0.721 ± 0.118  (0.49, 0.78, 0.78, 0.80, 0.76)
+
+Matriz de confusión (regresión logística, out-of-fold):
+           pred_ben  pred_mal
+  real_ben         6         4
+  real_mal         3        15
+
+Características de mayor peso (|coeficiente|):
+  característica                        coef  orienta a
+  ------------------------------------------------------------
+  mean_parent_is_powershell            0.311  maliciosa
+  freq_5379                            0.250  maliciosa
+  freq_23                             -0.232  benigna
+  densidad                            -0.200  benigna
+  freq_8                              -0.186  benigna
+  freq_13                              0.184  maliciosa
+  mean_process_in_user_space           0.162  maliciosa
+  freq_2                              -0.160  benigna
+  mean_registry_is_hku                 0.153  maliciosa
+  freq_3                               0.147  maliciosa
+  mean_registry_is_persistence_key    -0.147  benigna
+  freq_4738                           -0.147  benigna
+  freq_4662                            0.143  maliciosa
+  freq_12                              0.126  maliciosa
+  freq_4723                           -0.117  benigna
+
+[!] Si un modelo lineal SIN información de orden alcanza el mismo
+    rendimiento que el LSTM, la premisa de que la señal reside en
+    la secuencia no queda respaldada por este conjunto de datos.
+
+==============================================================================
+FIN
+==============================================================================
+Informe: analisis/baselines.txt
+Tablas : analisis/tabla3_reglas_triviales.csv, tabla4_linea_base.csv
