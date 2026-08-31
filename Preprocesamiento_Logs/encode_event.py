@@ -259,16 +259,18 @@ def sequence_to_matrices(sequence: list, max_len: int = MAX_SEQ_LEN):
 
 def preprocess_dataset(dataset, max_len: int = MAX_SEQ_LEN):
     """dataset: [(sequence_normalizada, label), ...]"""
-    X_cat, X_num, y = [], [], []
+    X_cat, X_num, X_mask, y = [], [], [], []
 
     for sequence, label in dataset:
         cat, num = sequence_to_matrices(sequence, max_len)
         X_cat.append(cat)
         X_num.append(num)
+        X_mask.append((cat[:, 0] != PAD_ID).astype(np.float32))
         y.append(float(label))
 
     return (
         np.array(X_cat, dtype=np.int32),
         np.array(X_num, dtype=np.float32),
+        np.array(X_mask, dtype=np.float32),
         np.array(y, dtype=np.float32),
     )

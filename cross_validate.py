@@ -33,6 +33,8 @@ from Preprocesamiento_Logs.data_augmentation import augment_dataset_raw
 from Preprocesamiento_Logs.encode_event import preprocess_dataset, MAX_SEQ_LEN
 from modeloLSTM import build_model
 
+from sklearn.metrics import precision_recall_curve, f1_score
+import numpy as np
 
 # =========================================================
 # CONFIGURACIÓN
@@ -40,7 +42,7 @@ from modeloLSTM import build_model
 
 N_SPLITS_DESEADOS = 5
 N_VARIANTS        = 2
-EPOCHS            = 60
+EPOCHS            = 80
 BATCH_SIZE        = 8
 PATIENCE          = 15
 THRESHOLD         = 0.5
@@ -87,8 +89,8 @@ def run_fold(train_raw, val_raw, fold_idx, verbose=0):
     train = normalize_dataset(train_aug)
     val   = normalize_dataset(val_raw)          # sin aumentar
 
-    Xc_tr, Xn_tr, y_tr = preprocess_dataset(train)
-    Xc_va, Xn_va, y_va = preprocess_dataset(val)
+    Xc_tr, Xn_tr, Xm_tr, y_tr = preprocess_dataset(train)
+    Xc_va, Xn_va, Xm_va, y_va = preprocess_dataset(val)
 
     # Pesos de clase: con 12 vs 66 el modelo aprendería a decir "maliciosa"
     classes = np.unique(y_tr)
@@ -110,7 +112,7 @@ def run_fold(train_raw, val_raw, fold_idx, verbose=0):
     )
 
     model.fit(
-        [Xc_tr, Xn_tr], y_tr,
+        [Xc_tr, Xn_tr, Xm_tr], y_tr,
         epochs=EPOCHS,
         batch_size=BATCH_SIZE,
         class_weight=class_weight,
@@ -118,7 +120,7 @@ def run_fold(train_raw, val_raw, fold_idx, verbose=0):
         verbose=verbose,
     )
 
-    y_prob = model.predict([Xc_va, Xn_va], verbose=0).ravel()
+    y_prob = model.predict([Xc_va, Xn_va, Xm_va], verbose=0).ravel()
     y_pred = (y_prob > THRESHOLD).astype(int)
 
     return y_va.astype(int), y_prob, y_pred, model, attention_model
@@ -207,6 +209,7 @@ def cross_validate(verbose_fit=0):
     print(f"  scores maliciosas: min={mal.min():.4f} media={mal.mean():.4f} max={mal.max():.4f}")
     print(f"  margen entre clases: {mal.min() - ben.max():+.4f}")
 
+
     return y_true_all, y_prob_all, per_fold
 
 
@@ -235,6 +238,8 @@ def permutation_test(n_repeats=3):
 
         t, p = [], []
         for fold_idx, (tr, va) in enumerate(skf.split(idx, shuffled), 1):
+            print(f"  permutación {rep + 1}, fold {fold_idx}/{n_splits}...", flush=True)
+
             yt, yp, _, _, _ = run_fold(
                 [shuffled_raw[i] for i in tr],
                 [shuffled_raw[i] for i in va],

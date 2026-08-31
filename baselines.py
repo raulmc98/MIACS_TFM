@@ -26,7 +26,7 @@ CAPTURAS ORIGINALES, para ser comparables con cross_validate.py.
 No requiere TensorFlow.
 
 Uso:
-    python -m Preprocesamiento_Logs.baselines
+    python -m baselines
 """
 
 import os

@@ -8,7 +8,7 @@ CAMBIOS CLAVE
    automáticamente a través de Concatenate -> LSTM -> AttentionLayer,
    de modo que los timesteps de padding no contribuyen ni al estado
    oculto ni a los pesos de atención.
-   Antes, con MAX_SEQ_LEN=900 y secuencias de ~100 logs, más del 80% de
+   Antes, con MAX_SEQ_LEN=1200 y secuencias de ~100 logs, más del 80% de
    los timesteps eran relleno procesado como si fuera dato real.
 3. AttentionLayer aplica -1e9 a los scores enmascarados ANTES del softmax,
    por lo que los pesos suman 1 solo sobre los logs reales.
@@ -103,7 +103,8 @@ def build_model(seq_len,
 
     cat_input = Input(shape=(seq_len, n_cat_fields), dtype="int32", name="cat_input")
     num_input = Input(shape=(seq_len, n_num_features), dtype="float32", name="num_input")
-
+    mask_input = Input(shape=(seq_len,), dtype="float32", name="mask_input")
+    
     embeddings = []
 
     # event_code: vocabulario propio + mask_zero -> genera LA máscara
@@ -129,20 +130,23 @@ def build_model(seq_len,
 
     x = Concatenate(axis=-1)(embeddings + [num_input])
 
+    bool_mask = tf.keras.layers.Lambda(
+        lambda m: tf.cast(m, tf.bool), name="to_bool_mask"
+    )(mask_input)
+
     # La máscara de emb_event_code se propaga sola hasta aquí
-    lstm_out = LSTM(lstm_units, return_sequences=True, name="lstm")(x)
+    lstm_out = LSTM(lstm_units, return_sequences=True, name="lstm")(x, mask=bool_mask)
     lstm_out = Dropout(dropout)(lstm_out)
 
-    context, attention_weights = AttentionLayer(name="attention")(lstm_out)
+    context, attention_weights = AttentionLayer(name="attention")(lstm_out, mask=bool_mask)
     context = Dropout(dropout)(context)
 
     output = Dense(1, activation="sigmoid", name="output",
                kernel_regularizer=regularizers.l2(1e-3))(context)
 
-    model = Model(inputs=[cat_input, num_input], outputs=output)
-    attention_model = Model(inputs=[cat_input, num_input], outputs=attention_weights)
 
-    return model, attention_model
+    inputs=[cat_input, num_input, mask_input]
+    return Model(inputs, outputs=output), Model(inputs, attention_weights)
 
 
 # =========================================================
@@ -186,9 +190,9 @@ if __name__ == "__main__":
     print(f"Longitud de secuencia: min={min(lengths)} p50={sorted(lengths)[len(lengths)//2]} max={max(lengths)} (MAX_SEQ_LEN={MAX_SEQ_LEN})")
 
     # 5. Vectorizar
-    Xc_tr, Xn_tr, y_tr = preprocess_dataset(train)
-    Xc_te, Xn_te, y_te = preprocess_dataset(test)
-    Xc_va, Xn_va, y_va = preprocess_dataset(val_raw)
+    Xc_tr, Xn_tr, Xm_tr, y_tr = preprocess_dataset(train)
+    Xc_te, Xn_te, Xm_te, y_te = preprocess_dataset(test)
+    Xc_va, Xn_va, Xm_va, y_va = preprocess_dataset(val_raw)
 
     print(f"X_cat {Xc_tr.shape}  X_num {Xn_tr.shape}  y {y_tr.shape}")
 
@@ -219,8 +223,8 @@ if __name__ == "__main__":
 
 
     model.fit(
-        [Xc_tr, Xn_tr], y_tr,
-        validation_data=([Xc_va, Xn_va], y_va),
+        [Xc_tr, Xn_tr, Xm_tr], y_tr,
+        validation_data=([Xc_va, Xn_va, Xm_va], y_va),
         epochs=60,
         batch_size=8,
         callbacks=[early_stop],
@@ -229,7 +233,7 @@ if __name__ == "__main__":
     )
 
 
-    y_prob = model.predict([Xc_te, Xn_te], verbose=0).ravel()
+    y_prob = model.predict([Xc_te, Xn_te, Xm_te], verbose=0).ravel()
     y_pred = (y_prob > 0.5).astype(int)
 
     print(confusion_matrix(y_te, y_pred))
