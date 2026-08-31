@@ -14,6 +14,7 @@ Uso:
     python -m Preprocesamiento_Logs.cross_validate
 """
 
+import sys
 import numpy as np
 import tensorflow as tf
 from collections import Counter
@@ -259,5 +260,8 @@ def permutation_test(n_repeats=3):
 
 if __name__ == "__main__":
     print(f"MAX_SEQ_LEN = {MAX_SEQ_LEN}")
-    # cross_validate(verbose_fit=0)
-    permutation_test(n_repeats=3)
+ 
+    if "--permutacion" in sys.argv:
+        permutation_test(n_repeats=3)
+    else:
+        cross_validate(verbose_fit=0)
